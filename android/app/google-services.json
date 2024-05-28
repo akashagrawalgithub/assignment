@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "133680539886",
+    "project_id": "geteidea-cacab",
+    "storage_bucket": "geteidea-cacab.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:133680539886:android:fca71d0b880d2080dbebff",
+        "android_client_info": {
+          "package_name": "com.example.geteideas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoI0RDmyNiXdVK8cp5N833TMnwRwSQEZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
