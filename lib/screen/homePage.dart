@@ -1,122 +1,140 @@
-import 'package:animate_do/animate_do.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _sourceController = TextEditingController();
-  final TextEditingController _destinationController = TextEditingController();
-  GoogleMapController? _mapController;
-  Set<Polyline> _polylines = Set();
+  GoogleMapController? mapController;
+  final LatLng _center = const LatLng(28.6129, 77.2295);
+  Marker? _origin;
+  Marker? _destination;
+  Set<Polyline> _polylines = {};
+  bool _isLoading = false;
+  String _mapMessage = "Select Source";
 
   void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
+    mapController = controller;
   }
 
-  void _createPolyline() {
-    LatLng sourceLocation = LatLng(28.6129, 77.2295);
-    LatLng destinationLocation = LatLng(28.7041, 77.1025);
+  void _addMarker(LatLng position) {
+    if (_origin == null) {
+      setState(() {
+        _origin = Marker(
+          markerId: const MarkerId("origin"),
+          position: position,
+          draggable: true,
+          infoWindow: const InfoWindow(title: "Origin"),
+        );
+        _mapMessage = "Select Destination";
+      });
+    } else if (_destination == null) {
+      setState(() {
+        _destination = Marker(
+          markerId: const MarkerId("destination"),
+          position: position,
+          draggable: true,
+          infoWindow: const InfoWindow(title: "Destination"),
+        );
+        _mapMessage = "Fetching Route...";
+        _isLoading = true;
+      });
+      _getDirections();
+    }
+  }
 
-    setState(() {
-      _polylines.add(
-        Polyline(
-          polylineId: PolylineId('route1'),
-          visible: true,
-          points: [sourceLocation, destinationLocation],
-          width: 4,
-          color: Colors.blue,
-        ),
-      );
-    });
+  Future<void> _getDirections() async {
+    if (_origin == null || _destination == null) return;
+
+    final origin = _origin!.position;
+    final destination = _destination!.position;
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=AIzaSyDlyvDZQbwT6O9iNNA5wdKp8z62o2cxEzs');
+
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'OK') {
+        final points = data['routes'][0]['overview_polyline']['points'];
+        final List<LatLng> polylineCoordinates = _decodePolyline(points);
+        setState(() {
+          _polylines.add(Polyline(
+            polylineId: const PolylineId('route'),
+            visible: true,
+            points: polylineCoordinates,
+            width: 5,
+            color: Colors.blue,
+          ));
+          _mapMessage = "Route Displayed";
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<LatLng> _decodePolyline(String polyline) {
+    List<LatLng> polylineCoordinates = [];
+    int index = 0;
+    int len = polyline.length;
+    int lat = 0;
+    int lng = 0;
+
+    while (index < len) {
+      int shift = 0;
+      int result = 0;
+      int byte;
+
+      do {
+        byte = polyline.codeUnitAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        byte = polyline.codeUnitAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      polylineCoordinates.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+
+    return polylineCoordinates;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _sourceController,
-                decoration: InputDecoration(
-                  hintText: 'Enter source',
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
-                  enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey.shade400)),
-                  border: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey.shade400)),
-                ),
-              ),
+      appBar: AppBar(
+        title: Text(_mapMessage),
+        actions: <Widget>[
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.only(right: 20.0),
+              child: CircularProgressIndicator(color: Colors.white),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _destinationController,
-                decoration: InputDecoration(
-                  hintText: 'Enter destination',
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
-                  enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey.shade400)),
-                  border: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey.shade400)),
-                ),
-              ),
-            ),
-            FadeInUp(
-              duration: const Duration(milliseconds: 1400),
-              child: Container(
-                margin: EdgeInsets.all(8),
-                padding: const EdgeInsets.only(top: 3, left: 3),
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(50),
-                    border: const Border(
-                      bottom: BorderSide(color: Colors.black),
-                      top: BorderSide(color: Colors.black),
-                      left: BorderSide(color: Colors.black),
-                      right: BorderSide(color: Colors.black),
-                    )),
-                child: MaterialButton(
-                  minWidth: double.infinity,
-                  height: 60,
-                  onPressed: () {
-                    _createPolyline;
-                  },
-                  color: Colors.greenAccent,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  child: const Text(
-                    "Create Polyline",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: GoogleMap(
-                onMapCreated: _onMapCreated,
-                initialCameraPosition: const CameraPosition(
-                  target: LatLng(28.6129, 77.2295),
-                  zoom: 12,
-                ),
-                polylines: _polylines,
-              ),
-            ),
-          ],
-        ),
+        ],
+      ),
+      body: GoogleMap(
+        onMapCreated: _onMapCreated,
+        initialCameraPosition: CameraPosition(target: _center, zoom: 11.0),
+        markers: Set<Marker>.from([
+          if (_origin != null) _origin!,
+          if (_destination != null) _destination!
+        ]),
+        polylines: _polylines,
+        onTap: _addMarker,
       ),
     );
   }
