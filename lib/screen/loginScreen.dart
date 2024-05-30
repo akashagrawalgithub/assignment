@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geteideas/screen/SignUpScreen.dart';
+import 'package:geteideas/screen/authService.dart';
 import 'package:geteideas/screen/homePage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -231,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Text("Don't have an account?"),
+                        const Text("Don't have an account?"),
                         GestureDetector(
                           onTap: () {
                             Get.to(SignupPage());
@@ -246,21 +247,37 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: () {
+                      AuthService().signInWithGoogle();
+                    },
+                    child: FadeInUp(
+                      duration: const Duration(milliseconds: 1500),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Image.network(
+                            "https://toppng.com/uploads/preview/google-logo-transparent-png-11659866441wanynck5pd.png",
+                            width: 30,
+                            height: 30,
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "Login With Google",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            FadeInUp(
-              duration: const Duration(milliseconds: 1200),
-              child: Container(
-                height: MediaQuery.of(context).size.height / 3,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image: AssetImage('assets/background.png'),
-                      fit: BoxFit.cover),
-                ),
-              ),
-            )
           ],
         ),
       ),

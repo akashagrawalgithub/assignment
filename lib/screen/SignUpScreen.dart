@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:geteideas/screen/authService.dart';
 import 'package:geteideas/screen/homePage.dart';
 import 'package:geteideas/screen/loginScreen.dart';
 
@@ -256,23 +257,51 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               FadeInUp(
-                  duration: const Duration(milliseconds: 1600),
+                duration: const Duration(milliseconds: 1600),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text("Already have an account?"),
+                    GestureDetector(
+                      onTap: () {
+                        Get.to(LoginPage());
+                      },
+                      child: const Text(
+                        " Login",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  AuthService().signInWithGoogle();
+                },
+                child: FadeInUp(
+                  duration: const Duration(milliseconds: 1500),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text("Already have an account?"),
-                      GestureDetector(
-                        onTap: () {
-                          Get.to(LoginPage());
-                        },
-                        child: const Text(
-                          " Login",
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 18),
+                      Image.network(
+                        "https://toppng.com/uploads/preview/google-logo-transparent-png-11659866441wanynck5pd.png",
+                        width: 30,
+                        height: 30,
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        "Login With Google",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
                         ),
                       ),
                     ],
-                  )),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
